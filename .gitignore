@@ -1,0 +1,13 @@
+# dmd output
+*.obj
+*.map
+*.deps
+
+# emacs tmpfiles
+*~
+
+# build dirs
+bin*/
+lib*/
+doc/
+import/
