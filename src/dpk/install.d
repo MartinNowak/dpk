@@ -31,6 +31,10 @@ void installPkgDesc(Ctx ctx) {
   writeConfig(pkgdesc, pkgdescpath);
 }
 
+void uninstallPkgDesc(Ctx ctx, string pkgname) {
+  removeFile(installPath(ctx, "dpk", pkgname));
+}
+
 Section makeInstallSect(Ctx ctx) {
   Section install;
   install.type = "install";

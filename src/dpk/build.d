@@ -81,6 +81,16 @@ int runInstall(Ctx ctx) {
   return 0;
 }
 
+int runUninstall(Ctx ctx) {
+  foreach(arg; ctx.args) {
+    if (auto pkg = findPkgByName(ctx, arg)) {
+      writeln("uninstall:\t", getName(pkg));
+      uninstallPkg(ctx, pkg);
+    }
+  }
+  return 0;
+}
+
 private:
 
 void buildLib(Ctx ctx, Section lib, string link) {
@@ -164,6 +174,15 @@ string[] installFolder(Ctx ctx, string dir) {
     return copyRel(installPath(ctx, dir), "**", dir);
   else
     return null;
+}
+
+void uninstallPkg(Ctx ctx, string pkgname) {
+  auto pkgdesc = loadPkgDesc(ctx, pkgname);
+
+  foreach(file; splitter(pkgdesc.get("install").get("files"))) {
+    removeFile(installPath(ctx, file));
+  }
+  uninstallPkgDesc(ctx, pkgname);
 }
 
 version (Posix) {

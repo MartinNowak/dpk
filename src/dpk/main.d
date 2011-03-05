@@ -48,8 +48,6 @@ int main(string[] args) {
   case Mode.list:
     return runList(ctx);
   case Mode.uninstall:
-    return runUninstall(args);
+    return runUninstall(ctx);
   }
 }
-
-int runUninstall(string[]) { assert(0); }
