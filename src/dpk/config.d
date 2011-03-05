@@ -1,6 +1,7 @@
 module dpk.config;
 
-import std.algorithm, std.array, std.conv, std.exception, std.regex, std.stream, std.string;
+import std.algorithm, std.array, std.conv, std.exception, std.metastrings,
+  std.regex, std.stream, std.string;
 
 struct Config {
   Section[] sections;
@@ -9,23 +10,27 @@ struct Config {
     return to!string(this.sections);
   }
 
-  const(Section) get(string type, lazy const Section def=Section()) const {
+  Section get(string type, lazy Section def=Section()) {
     auto sect = findSect(type);
     return sect.empty ? def : sect.front;
   }
 
-  const(Section) get(string type, lazy Exception exc) const {
+  Section get(string type, lazy Exception exc) {
     auto sect = findSect(type);
     enforce(!sect.empty, exc);
     return sect.front;
   }
 
   bool has(string type) const {
-    return !findSect(type).empty;
+    return !(cast(Config)this).findSect(type).empty;
+  }
+
+  auto sectsByType(string type)() {
+    return std.algorithm.filter!(Format!("a.type == \"%s\"", type))(this.sections);
   }
 
 private:
-  const(Section)[] findSect(string type) const {
+  Section[] findSect(string type) {
     return std.algorithm.find!("a.type == b")(this.sections.save, type);
   }
 }
