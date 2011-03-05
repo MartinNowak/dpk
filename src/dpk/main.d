@@ -40,9 +40,9 @@ int main(string[] args) {
   case Mode.distclean:
     return runDistClean(args);
   case Mode.docs:
-    return runDocs(args);
+    return runDocs(ctx);
   case Mode.imports:
-    return runImports(args);
+    return runImports(ctx);
   case Mode.install:
     return runInstall(args);
   case Mode.list:
@@ -54,8 +54,6 @@ int main(string[] args) {
 
 int runClean(string[]) { assert(0); }
 int runDistClean(string[]) { assert(0); }
-int runDocs(string[]) { assert(0); }
-int runImports(string[]) { assert(0); }
 int runInstall(string[]) { assert(0); }
 int runList(string[]) { assert(0); }
 int runUninstall(string[]) { assert(0); }

@@ -1,21 +1,23 @@
 module dpk.ctx;
 
 import std.algorithm, std.bitmanip, std.functional, std.path, std.process;
-import dpk.config, dpk.dflags, dpk.util;
+import dpk.config, dpk.dflags, dpk.pkgdesc, dpk.util;
 
 class Ctx {
   string[] args;
   string _prefix;
   string[] _installedPkgs;
   Section _dpkcfg;
+  PkgDesc _pkgdesc;
   DFlags _dflags;
 
   mixin(bitfields!(
           bool, "hasprefix", 1,
           bool, "hasinstalledPkgs", 1,
           bool, "hasdpkcfg", 1,
+          bool, "haspkgdesc", 1,
           bool, "hasdflags", 1,
-          uint, "", 4,
+          uint, "", 3,
         ));
 
   this(string[] args) {
@@ -52,6 +54,15 @@ class Ctx {
     }
 
     return this._dpkcfg;
+  }
+
+  @property Config pkgdesc() {
+    if (!this.haspkgdesc) {
+      this._pkgdesc = loadLocalPkgDesc();
+      this.haspkgdesc = true;
+    }
+
+    return this._pkgdesc;
   }
 
   @property DFlags dflags() {

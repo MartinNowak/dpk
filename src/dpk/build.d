@@ -4,12 +4,27 @@ import std.array, std.conv, std.exception, std.functional, std.path, std.stdio;
 import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util;
 
 int runBuild(Ctx ctx) {
-  auto pkgDesc = loadLocalPkgDesc();
-  foreach(lib; pkgDesc.sectsByType!("lib")()) {
+  foreach(lib; ctx.pkgdesc.sectsByType!("lib")()) {
     buildLib(ctx, lib, depFlags(ctx, lib));
   }
-  foreach(bin; pkgDesc.sectsByType!("bin")()) {
+  foreach(bin; ctx.pkgdesc.sectsByType!("bin")()) {
     buildBin(ctx, bin, depFlags(ctx, bin));
+  }
+  return 0;
+}
+
+int runDocs(Ctx ctx) {
+  foreach(tgt; ctx.pkgdesc.sections) {
+    if (to!bool(tgt.get("docs")))
+      buildDocs(ctx, tgt);
+  }
+  return 0;
+}
+
+int runImports(Ctx ctx) {
+  foreach(tgt; ctx.pkgdesc.sections) {
+    if (to!bool(tgt.get("imports")))
+      buildImports(ctx, tgt);
   }
   return 0;
 }
@@ -49,6 +64,28 @@ void buildBin(Ctx ctx, Section bin, string link) {
   writeln("bin: ", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
+  execCmdInDir(cmd, root);
+}
+
+void buildImports(Ctx ctx, Section tgt) {
+  auto root = tgt.get("root");
+  auto srcs = resolveGlobs(tgt.get("srcs"), root);
+  enforce(!srcs.empty, new Exception("No sources found"));
+
+  auto imppath = rel2abs("import");
+  writeln("imports: ", imppath);
+  auto cmd = fmtString("dmd -c -o- -op -Hd%s %s", imppath, join(srcs, " "));
+  execCmdInDir(cmd, root);
+}
+
+void buildDocs(Ctx ctx, Section tgt) {
+  auto root = tgt.get("root");
+  auto srcs = resolveGlobs(tgt.get("srcs"), root);
+  enforce(!srcs.empty, new Exception("No sources found"));
+
+  auto docpath = rel2abs("doc");
+  writeln("docs: ", docpath);
+  auto cmd = fmtString("dmd -c -o- -op -Dd%s %s", docpath, join(srcs, " "));
   execCmdInDir(cmd, root);
 }
 
