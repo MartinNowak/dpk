@@ -32,7 +32,7 @@ int runImports(Ctx ctx) {
 int runClean(Ctx ctx) {
   foreach(dir; ["bin32", "bin64", "lib32", "lib64"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
-      writeln("clean: ", dir);
+      writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
     }
   }
@@ -42,9 +42,16 @@ int runClean(Ctx ctx) {
 int runDistClean(Ctx ctx) {
   foreach(dir; ["bin32", "bin64", "lib32", "lib64", "doc", "import"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
-      writeln("clean: ", dir);
+      writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
     }
+  }
+  return 0;
+}
+
+int runList(Ctx ctx) {
+  foreach(pkg; ctx.installedPkgs) {
+    writeln("\t", getName(pkg));
   }
   return 0;
 }
@@ -69,7 +76,7 @@ void buildLib(Ctx ctx, Section lib, string link) {
   enforce(!srcs.empty, new Exception("No sources found"));
 
   auto tgtpath = rel2abs(std.path.join(libDir(ctx), libpre ~ tgtName(ctx, lib) ~ libsuf));
-  writeln("lib: ", tgtpath);
+  writeln("lib:\t", tgtpath);
   auto cmd = fmtString("dmd -lib %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
   execCmdInDir(cmd, root);
@@ -81,7 +88,7 @@ void buildBin(Ctx ctx, Section bin, string link) {
   enforce(!srcs.empty, new Exception("No sources found"));
 
   auto tgtpath = rel2abs(std.path.join(binDir(ctx), binpre ~ tgtName(ctx, bin) ~ binsuf));
-  writeln("bin: ", tgtpath);
+  writeln("bin:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
   execCmdInDir(cmd, root);
@@ -93,7 +100,7 @@ void buildImports(Ctx ctx, Section tgt) {
   enforce(!srcs.empty, new Exception("No sources found"));
 
   auto imppath = rel2abs("import");
-  writeln("imports: ", imppath);
+  writeln("imports:\t", imppath);
   auto cmd = fmtString("dmd -c -o- -op -Hd%s %s", imppath, join(srcs, " "));
   execCmdInDir(cmd, root);
 }
@@ -104,7 +111,7 @@ void buildDocs(Ctx ctx, Section tgt) {
   enforce(!srcs.empty, new Exception("No sources found"));
 
   auto docpath = rel2abs("doc");
-  writeln("docs: ", docpath);
+  writeln("docs:\t", docpath);
   auto cmd = fmtString("dmd -c -o- -op -Dd%s %s", docpath, join(srcs, " "));
   execCmdInDir(cmd, root);
 }
