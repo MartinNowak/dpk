@@ -82,7 +82,7 @@ string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
     std.file.copy(file, tgtfile);
   }
   string prefixDir(string path) {
-    return std.path.join(root, path);
+    return std.path.join(root, chompPrefix(path, std.path.curdir ~ std.path.sep));
   }
   return apply!prefixDir(files);
 }
