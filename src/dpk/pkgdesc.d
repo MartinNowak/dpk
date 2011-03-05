@@ -1,9 +1,10 @@
 module dpk.pkgdesc;
 
 import std.conv, std.file, std.path, std.stdio;
-import dpk.config, dpk.util;
+import dpk.config, dpk.ctx, dpk.install, dpk.util;
 
-PkgDesc loadPkgDesc(string descpath) {
+PkgDesc loadPkgDesc(Ctx ctx, string pkgbasename) {
+  auto descpath = installPath(ctx, "dpk", pkgbasename);
   if (!std.file.exists(descpath) || !std.file.isFile(descpath)) {
     throw new Exception(fmtString("Missing file %s.", descpath));
   }
@@ -11,11 +12,12 @@ PkgDesc loadPkgDesc(string descpath) {
 }
 
 PkgDesc loadLocalPkgDesc() {
-  return loadPkgDesc(join(curdir, "dpk.cfg"));
+  return PkgDesc(parseConfig(join(curdir, "dpk.cfg")));
 }
 
 struct PkgDesc {
   Config config;
+  alias config this;
 
   @property string toString() const {
     return fmtString("PkgDesc %s:\n%s", this.pkgSect().get("name", ""),
@@ -23,7 +25,7 @@ struct PkgDesc {
   }
 
 private:
-  const(Section) pkgSect() const {
-    return config.get("pkg", new Exception("PkgDesc is missing [pkg] section."));
+  Section pkgSect() const {
+    return (cast(Config)config).get("pkg", new Exception("PkgDesc is missing [pkg] section."));
   }
 }

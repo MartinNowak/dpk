@@ -1,7 +1,7 @@
 module dpk.main;
 
 import std.array, std.stdio, std.string;
-import dpk.build;
+import dpk.build, dpk.ctx;
 
 enum usage = "usage dmd-pkg [build | clean | distclean | docs | imports |\n"
   "\tinstall | list | uninstall] compilerflags";
@@ -21,7 +21,6 @@ Mode getMode(ref string[] args) {
   return Mode.build;
 }
 
-
 int main(string[] args) {
   args.popFront;
 
@@ -31,10 +30,11 @@ int main(string[] args) {
   }
 
   Mode mode = getMode(args);
+  scope auto ctx = new Ctx(args);
 
   final switch (mode) {
   case Mode.build:
-    return runBuild(args);
+    return runBuild(ctx);
   case Mode.clean:
     return runClean(args);
   case Mode.distclean:
