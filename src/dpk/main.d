@@ -36,9 +36,9 @@ int main(string[] args) {
   case Mode.build:
     return runBuild(ctx);
   case Mode.clean:
-    return runClean(args);
+    return runClean(ctx);
   case Mode.distclean:
-    return runDistClean(args);
+    return runDistClean(ctx);
   case Mode.docs:
     return runDocs(ctx);
   case Mode.imports:
@@ -52,8 +52,6 @@ int main(string[] args) {
   }
 }
 
-int runClean(string[]) { assert(0); }
-int runDistClean(string[]) { assert(0); }
 int runInstall(string[]) { assert(0); }
 int runList(string[]) { assert(0); }
 int runUninstall(string[]) { assert(0); }

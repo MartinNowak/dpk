@@ -29,6 +29,26 @@ int runImports(Ctx ctx) {
   return 0;
 }
 
+int runClean(Ctx ctx) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64"]) {
+    if (std.file.exists(dir) && std.file.isDir(dir)) {
+      writeln("clean: ", dir);
+      std.file.rmdirRecurse(dir);
+    }
+  }
+  return 0;
+}
+
+int runDistClean(Ctx ctx) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "doc", "import"]) {
+    if (std.file.exists(dir) && std.file.isDir(dir)) {
+      writeln("clean: ", dir);
+      std.file.rmdirRecurse(dir);
+    }
+  }
+  return 0;
+}
+
 private:
 
 version (Posix) {
