@@ -56,19 +56,30 @@ int runList(Ctx ctx) {
   return 0;
 }
 
-private:
+int runInstall(Ctx ctx) {
+  runDistClean(ctx);
+  runBuild(ctx);
+  runImports(ctx);
+  runDocs(ctx);
+  string[] files;
+  scope(failure) foreach(file; files) { removeFile(file); }
 
-version (Posix) {
-  enum libpre = "lib";
-  enum libsuf = ".a";
-  enum binpre = "";
-  enum binsuf = "";
-} else version (Windows) {
-  enum libpre = "";
-  enum libsuf = ".lib";
-  enum binpre = "";
-  enum binsuf = ".exe";
+  foreach(bin; ctx.pkgdesc.sectsByType!("bin")()) {
+    if (to!bool(bin.get("install")))
+      files ~= installBin(ctx, bin);
+  }
+  foreach(lib; ctx.pkgdesc.sectsByType!("lib")()) {
+    if (to!bool(lib.get("install")))
+      files ~= installBin(ctx, lib);
+  }
+  files ~= installFolder(ctx, "doc");
+  files ~= installFolder(ctx, "import");
+  ctx.installedFiles = files;
+  installPkgDesc(ctx);
+  return 0;
 }
+
+private:
 
 void buildLib(Ctx ctx, Section lib, string link) {
   auto root = lib.get("root");
@@ -87,7 +98,7 @@ void buildBin(Ctx ctx, Section bin, string link) {
   auto srcs = resolveGlobs(bin.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto tgtpath = rel2abs(std.path.join(binDir(ctx), binpre ~ tgtName(ctx, bin) ~ binsuf));
+  auto tgtpath = rel2abs(std.path.join(binDir(ctx), binName(ctx, bin)));
   writeln("bin:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
@@ -133,12 +144,47 @@ string depFlags(Ctx ctx, Section target) {
   return links;
 }
 
+string[] installBin(Ctx ctx, Section bin) {
+  return copyRel(installPath(ctx, binDir(ctx)), binName(ctx, bin), binDir(ctx));
+}
+
+string[] installLib(Ctx ctx, Section lib) {
+  return copyRel(installPath(ctx, libDir(ctx)), libName(ctx, lib), libDir(ctx));
+}
+
+string[] installFolder(Ctx ctx, string dir) {
+  if (std.file.exists(dir) && std.file.isDir(dir))
+    return copyRel(installPath(ctx, dir), "**", dir);
+  else
+    return null;
+}
+
+version (Posix) {
+  enum libpre = "lib";
+  enum libsuf = ".a";
+  enum binpre = "";
+  enum binsuf = "";
+} else version (Windows) {
+  enum libpre = "";
+  enum libsuf = ".lib";
+  enum binpre = "";
+  enum binsuf = ".exe";
+}
+
 string libDir(Ctx ctx) {
   return "lib" ~ to!string(ctx.dflags.wordsize);
 }
 
 string binDir(Ctx ctx) {
   return "bin" ~ to!string(ctx.dflags.wordsize);
+}
+
+string libName(Ctx ctx, Section lib) {
+  return libpre ~ tgtName(ctx, lib) ~ libsuf;
+}
+
+string binName(Ctx ctx, Section bin) {
+  return binpre ~ tgtName(ctx, bin) ~ binsuf;
 }
 
 string tgtName(Ctx ctx, Section tgt) {

@@ -10,6 +10,7 @@ class Ctx {
   Section _dpkcfg;
   PkgDesc _pkgdesc;
   DFlags _dflags;
+  string[] installedFiles;
 
   mixin(bitfields!(
           bool, "hasargs", 1,

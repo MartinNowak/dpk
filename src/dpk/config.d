@@ -2,6 +2,7 @@ module dpk.config;
 
 import std.algorithm, std.array, std.conv, std.exception, std.metastrings,
   std.regex, std.stream, std.string;
+import dpk.util : fmtString;
 
 struct Config {
   Section[] sections;
@@ -118,6 +119,17 @@ Config parseConfig(string filepath) {
   if (insection)
     config.sections ~= curSect;
   return config;
+}
+
+void writeConfig(Config config, string filepath) {
+  scope auto cfgstream = new std.stream.File(filepath, FileMode.OutNew);
+
+  foreach(sect; config.sections) {
+    cfgstream.writeLine(fmtString("[%s]", sect.type));
+    foreach(k, v; sect.props) {
+      cfgstream.writeLine(fmtString("%s = %s", k, v));
+    }
+  }
 }
 
 private:
