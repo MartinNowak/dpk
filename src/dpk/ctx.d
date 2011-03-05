@@ -38,7 +38,7 @@ class Ctx {
   @property string[] installedPkgs() {
     if (!this.hasinstalledPkgs) {
       this._installedPkgs = apply!basename(
-        resolveGlob!(unaryFun!("a.isFile"))("*.cfg", join(this.prefix, "dpk")));
+        resolveGlobs("*.cfg", join(this.prefix, "dpk")));
       this.hasinstalledPkgs = true;
     }
 

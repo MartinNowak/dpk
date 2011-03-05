@@ -1,6 +1,6 @@
 module dpk.util;
 
-import std.array, std.exception, std.file, std.format, std.path, std.regex, std.string;
+import std.array, std.exception, std.file, std.format, std.functional, std.path, std.regex, std.string;
 
 string fmtString(Args...)(string fmt, Args args) {
   auto app = appender!string();
@@ -14,28 +14,39 @@ Range apply(alias fun, Range)(Range range) {
   return range;
 }
 
-int execCmd(string cmd) {
-    if (!cmd) return std.c.process.system(null);
-    const cmdz = toStringz(cmd);
-    auto status = std.c.process.system(cmdz);
-    if (status == -1) return status;
-    version (Windows) status <<= 8;
-    return status;
+void execCmd(string cmd) {
+  enforce(!std.process.system(cmd),
+    new Exception(fmtString("Error executing cmd: \n\n %s", cmd)));
 }
 
-string[] resolveGlob(alias pred)(string glob, string root = std.path.curdir) {
-  auto cwd = std.file.getcwd();
-  scope(exit) std.file.chdir(cwd);
-  std.file.chdir(root);
+void execCmdInDir(string cmd, string dir) {
+  auto dc = DirChanger(dir);
+
+  execCmd(cmd);
+}
+
+string[] resolveGlobs(alias pred=unaryFun!(q{a.isFile}))(string globs, string root = std.path.curdir) {
+  auto dc = DirChanger(root);
 
   string[] result;
-  auto matcher = reMatcher(glob);
-  foreach(DirEntry de; dirEntries(std.path.curdir, SpanMode.depth)) {
-    if (pred(de) && !match(de.name, matcher).empty) {
-      result ~= de.name;
+  foreach(glob; splitter(globs)) {
+    auto matcher = reMatcher(glob);
+    foreach(DirEntry de; dirEntries(std.path.curdir, SpanMode.depth)) {
+      if (pred(de) && !match(de.name, matcher).empty) {
+        result ~= de.name;
+      }
     }
   }
   return result;
+}
+
+struct DirChanger {
+  string olddir;
+  this(string newdir) {
+    this.olddir = std.file.getcwd();
+    std.file.chdir(newdir);
+  }
+  ~this() { std.file.chdir(this.olddir); }
 }
 
 private:
