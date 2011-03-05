@@ -27,7 +27,6 @@ class Ctx {
       this._prefix = environment.get("PREFIX");
       if (this._prefix is null)
         this._prefix = this.dpkcfg.get("prefix");
-      std.stdio.writeln("prefix", this.classinfo.classInvariant);
       this._prefix = std.path.expandTilde(this._prefix);
       this.hasprefix = true;
     }
