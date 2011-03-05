@@ -1,10 +1,10 @@
 module dpk.ctx;
 
-import std.algorithm, std.bitmanip, std.functional, std.path, std.process;
+import std.algorithm, std.array, std.bitmanip, std.functional, std.path, std.process;
 import dpk.config, dpk.dflags, dpk.pkgdesc, dpk.util;
 
 class Ctx {
-  string[] args;
+  string[] _args;
   string _prefix;
   string[] _installedPkgs;
   Section _dpkcfg;
@@ -12,16 +12,26 @@ class Ctx {
   DFlags _dflags;
 
   mixin(bitfields!(
+          bool, "hasargs", 1,
           bool, "hasprefix", 1,
           bool, "hasinstalledPkgs", 1,
           bool, "hasdpkcfg", 1,
           bool, "haspkgdesc", 1,
           bool, "hasdflags", 1,
-          uint, "", 3,
+          uint, "", 2,
         ));
 
   this(string[] args) {
-    this.args = args;
+    this._args = args;
+  }
+
+  @property string[] args() {
+    if (!this.hasargs) {
+      if (this._args.empty)
+        this._args = split(this.dpkcfg.get("defaultargs"));
+      this.hasargs = true;
+    }
+    return this._args;
   }
 
   @property string prefix() {
