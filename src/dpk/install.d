@@ -1,7 +1,7 @@
 module dpk.install;
 
-import std.algorithm, std.array, std.exception, std.file, std.path, std.string;
-import dpk.config, dpk.ctx, dpk.util;
+import std.algorithm, std.array, std.exception, std.file, std.path, std.range, std.string;
+import dpk.config, dpk.ctx, dpk.pkgdesc, dpk.util;
 
 string findPkgByName(Ctx ctx, string pkgname) {
   auto not = (string e) { return !std.algorithm.startsWith(tolower(e), tolower(pkgname)); };
@@ -17,14 +17,18 @@ string installPath(Ctx ctx, string subdir, string relpath=null) {
 
 void installPkgDesc(Ctx ctx) {
   auto pkgdesc = ctx.pkgdesc;
-  pkgdesc.sections ~= makeInstallSect(ctx);
-  std.stdio.writeln(pkgdesc);
+
   auto pkgsect = pkgdesc.get("pkg");
   auto pkgname = fmtString("%s-%s.cfg", pkgsect.get("name"), pkgsect.get("version"));
   auto dpkdir = installPath(ctx, "dpk");
   if (!std.file.exists(dpkdir))
     mkdirRecurse(dpkdir);
-  writeConfig(pkgdesc, join(dpkdir, pkgname));
+
+  pkgdesc.sections ~= makeInstallSect(ctx);
+  auto pkgdescpath = join(dpkdir, pkgname);
+  if (std.file.exists(pkgdescpath))
+    mergePkgDescs(pkgdesc, PkgDesc(parseConfig(pkgdescpath)));
+  writeConfig(pkgdesc, pkgdescpath);
 }
 
 Section makeInstallSect(Ctx ctx) {
@@ -32,4 +36,9 @@ Section makeInstallSect(Ctx ctx) {
   install.type = "install";
   install["files"] = std.array.join(ctx.installedFiles, " ");
   return install;
+}
+
+void mergePkgDescs(ref PkgDesc newpkg, PkgDesc existing) {
+  auto cat = sort(split(newpkg.get("install")["files"]) ~ split(existing.get("install")["files"]));
+  newpkg.get("install")["files"] = join(uniq(cat), " ");
 }

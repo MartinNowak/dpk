@@ -67,7 +67,7 @@ class Ctx {
     return this._dpkcfg;
   }
 
-  @property Config pkgdesc() {
+  @property PkgDesc pkgdesc() {
     if (!this.haspkgdesc) {
       this._pkgdesc = loadLocalPkgDesc();
       this.haspkgdesc = true;
