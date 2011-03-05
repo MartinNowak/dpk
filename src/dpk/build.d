@@ -2,6 +2,8 @@ module dpk.build;
 
 import std.array, std.conv, std.exception, std.functional, std.path, std.stdio;
 import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util;
+version (Posix) import core.sys.posix.sys.stat, std.string : toStringz;
+
 
 int runBuild(Ctx ctx) {
   foreach(lib; ctx.pkgdesc.sectsByType!("lib")()) {
@@ -70,7 +72,7 @@ int runInstall(Ctx ctx) {
   }
   foreach(lib; ctx.pkgdesc.sectsByType!("lib")()) {
     if (to!bool(lib.get("install")))
-      files ~= installBin(ctx, lib);
+      files ~= installLib(ctx, lib);
   }
   files ~= installFolder(ctx, "doc");
   files ~= installFolder(ctx, "import");
@@ -145,7 +147,12 @@ string depFlags(Ctx ctx, Section target) {
 }
 
 string[] installBin(Ctx ctx, Section bin) {
-  return copyRel(installPath(ctx, binDir(ctx)), binName(ctx, bin), binDir(ctx));
+  auto instpath = installPath(ctx, binDir(ctx));
+  auto binname = binName(ctx, bin);
+  auto files = copyRel(instpath, binname, binDir(ctx));
+  version (Posix)
+    core.sys.posix.sys.stat.chmod(toStringz(join(instpath, binname)), octal!755);
+  return files;
 }
 
 string[] installLib(Ctx ctx, Section lib) {
