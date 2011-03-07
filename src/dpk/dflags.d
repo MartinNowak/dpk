@@ -21,6 +21,8 @@ struct DFlags {
       this.dinfo = DFlags.debuginfo.gc;
     if (!find(args, "-g").empty)
       this.dinfo = DFlags.debuginfo.g;
+    if (!find(args, "-v").empty)
+      this.verbose = true;
   }
 
   @property string suffix() const {
@@ -40,6 +42,7 @@ struct DFlags {
   uint wordsize = 32;
   debuginfo dinfo = debuginfo.no;
   bool profile, coverage;
+  bool verbose;
 }
 
 unittest {

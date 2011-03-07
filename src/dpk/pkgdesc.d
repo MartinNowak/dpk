@@ -1,6 +1,6 @@
 module dpk.pkgdesc;
 
-import std.conv, std.file, std.path, std.stdio;
+import std.conv, std.file, std.path, std.stdio, std.string;
 import dpk.config, dpk.ctx, dpk.install, dpk.util;
 
 PkgDesc loadPkgDesc(Ctx ctx, string pkgbasename) {
@@ -12,7 +12,7 @@ PkgDesc loadPkgDesc(Ctx ctx, string pkgbasename) {
 }
 
 PkgDesc loadLocalPkgDesc() {
-  return PkgDesc(parseConfig(join(curdir, "dpk.cfg")));
+  return PkgDesc(parseConfig(std.path.join(curdir, "dpk.cfg")));
 }
 
 struct PkgDesc {
@@ -22,6 +22,10 @@ struct PkgDesc {
   @property string toString() const {
     return fmtString("PkgDesc %s:\n%s", this.pkgSect().get("name", ""),
       to!string(this.config));
+  }
+
+  @property string name() const {
+    return tolower(this.pkgSect().get("name"));
   }
 
 private:

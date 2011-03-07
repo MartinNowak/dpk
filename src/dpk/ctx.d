@@ -84,4 +84,8 @@ class Ctx {
 
     return this._dflags;
   }
+
+  @property bool verbose() {
+    return this.dflags.verbose;
+  }
 }

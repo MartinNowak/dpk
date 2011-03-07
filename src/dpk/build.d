@@ -1,6 +1,6 @@
 module dpk.build;
 
-import std.array, std.conv, std.exception, std.functional, std.path, std.stdio;
+import std.array, std.conv, std.exception, std.functional, std.path, std.stdio, std.string, std.range;
 import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util;
 version (Posix) import core.sys.posix.sys.stat, std.string : toStringz;
 
@@ -102,6 +102,7 @@ void buildLib(Ctx ctx, Section lib, string link) {
   writeln("lib:\t", tgtpath);
   auto cmd = fmtString("dmd -lib %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
+  if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
 
@@ -114,6 +115,7 @@ void buildBin(Ctx ctx, Section bin, string link) {
   writeln("bin:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
+  if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
 
@@ -125,6 +127,7 @@ void buildImports(Ctx ctx, Section tgt) {
   auto imppath = rel2abs("import");
   writeln("imports:\t", imppath);
   auto cmd = fmtString("dmd -c -o- -op -Hd%s %s", imppath, join(srcs, " "));
+  if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
 
@@ -136,24 +139,53 @@ void buildDocs(Ctx ctx, Section tgt) {
   auto docpath = rel2abs("doc");
   writeln("docs:\t", docpath);
   auto cmd = fmtString("dmd -c -o- -op -Dd%s %s", docpath, join(srcs, " "));
+  if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
 
 string depFlags(Ctx ctx, Section target) {
-  auto deps = split(target.get("depends"));
-  string links = fmtString("-L-L%s ", installPath(ctx, libDir(ctx)));
+  auto deps = target.get("depends");
+  string flags;
 
-  if (deps.length) {
-    foreach(dep; deps) {
-      if (auto cfgname = findPkgByName(ctx, dep)) {
-        auto pkgdesc = loadPkgDesc(ctx, cfgname);
-        foreach(lib; pkgdesc.sectsByType!("lib")())
-          links ~= fmtString("-L-l%s ", tgtName(ctx, lib));
-      } else
+  string pkgLinkFlags(PkgDesc pkgdesc) {
+    string result;
+    auto libs = pkgdesc.sectsByType!("lib")();
+    foreach(lib; libs) {
+      result ~= fmtString("-L-l%s ", tgtName(ctx, lib));
+      foreach(clib; splitter(lib.get("links"))) {
+        result ~= fmtString("-L-l%s ", clib);
+      }
+      result ~= depFlags(ctx, lib);
+    }
+    auto hdrs = pkgdesc.sectsByType!("headers")();
+    foreach(hdr; hdrs) {
+      foreach(clib; splitter(hdr.get("links"))) {
+        result ~= fmtString("-L-l%s ", clib);
+      }
+      result ~= depFlags(ctx, hdr);
+    }
+    return result;
+  }
+
+  if (!deps.empty) {
+    flags = fmtString("-L-L%s ", installPath(ctx, libDir(ctx)));
+    foreach(dep; splitter(deps)) {
+      if (tolower(dep) == ctx.pkgdesc.name) {
+        auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
+        auto libs = ctx.pkgdesc.sectsByType!("lib")();
+        foreach(lib; chain(hdrs, libs))
+          flags ~= fmtString("-I%s ", rel2abs(lib.get("root")));
+        flags ~= fmtString("-L-L%s ", rel2abs(libDir(ctx)));
+        flags ~= pkgLinkFlags(ctx.pkgdesc);
+      } else if (auto cfgname = findPkgByName(ctx, dep)) {
+        flags ~= pkgLinkFlags(loadPkgDesc(ctx, cfgname));
+      } else {
         throw new Exception(fmtString("Missing pkg dependecy %s", dep));
+      }
     }
   }
-  return links;
+
+  return flags;
 }
 
 string[] installBin(Ctx ctx, Section bin) {
@@ -214,5 +246,7 @@ string binName(Ctx ctx, Section bin) {
 }
 
 string tgtName(Ctx ctx, Section tgt) {
-  return tgt.get("target") ~ ctx.dflags.suffix;
+  auto name = tgt.get("target", new Exception("Missing target property."));
+  assert(!name.empty);
+  return name ~ ctx.dflags.suffix;
 }
