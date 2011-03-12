@@ -1,6 +1,6 @@
 module dpk.build;
 
-import std.array, std.conv, std.exception, std.functional, std.path, std.stdio, std.string, std.range;
+import std.algorithm, std.array, std.conv, std.exception, std.functional, std.path, std.stdio, std.string, std.range;
 import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util;
 version (Posix) import core.sys.posix.sys.stat, std.string : toStringz;
 
@@ -82,10 +82,24 @@ int runInstall(Ctx ctx) {
 }
 
 int runUninstall(Ctx ctx) {
-  foreach(arg; ctx.args) {
-    if (auto pkg = findPkgByName(ctx, arg)) {
+  void uninstall(string hint) {
+    if (auto pkg = findPkgByName(ctx, hint)) {
       writeln("uninstall:\t", getName(pkg));
       uninstallPkg(ctx, pkg);
+    }
+  }
+
+  auto args = filter!(q{!a.startsWith("-")})(ctx.args);
+  if (args.empty) {
+    string name;
+    if (collectException(ctx.pkgdesc.name, name)) {
+      stderr.writeln("usage dpk uninstall [pkg-name]");
+      return 1;
+    }
+    uninstall(name);
+  } else {
+    foreach(arg; args) {
+      uninstall(arg);
     }
   }
   return 0;
