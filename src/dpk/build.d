@@ -6,10 +6,15 @@ version (Posix) import core.sys.posix.sys.stat, std.string : toStringz;
 
 
 int runBuild(Ctx ctx) {
-  foreach(lib; ctx.pkgdesc.sectsByType!("lib")()) {
+  PkgDesc local;
+  if (collectException(ctx.pkgdesc, local)) {
+    stderr.writeln("failed to load dpk.cfg");
+    return 1;
+  }
+  foreach(lib; local.sectsByType!("lib")()) {
     buildLib(ctx, lib, depFlags(ctx, lib));
   }
-  foreach(bin; ctx.pkgdesc.sectsByType!("bin")()) {
+  foreach(bin; local.sectsByType!("bin")()) {
     buildBin(ctx, bin, depFlags(ctx, bin));
   }
   return 0;
