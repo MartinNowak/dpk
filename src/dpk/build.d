@@ -171,16 +171,10 @@ string depFlags(Ctx ctx, Section target) {
     auto libs = pkgdesc.sectsByType!("lib")();
     foreach(lib; libs) {
       result ~= fmtString("-L-l%s ", tgtName(ctx, lib));
-      foreach(clib; splitter(lib.get("links"))) {
-        result ~= fmtString("-L-l%s ", clib);
-      }
       result ~= depFlags(ctx, lib);
     }
     auto hdrs = pkgdesc.sectsByType!("headers")();
     foreach(hdr; hdrs) {
-      foreach(clib; splitter(hdr.get("links"))) {
-        result ~= fmtString("-L-l%s ", clib);
-      }
       result ~= depFlags(ctx, hdr);
     }
     return result;
@@ -204,6 +198,9 @@ string depFlags(Ctx ctx, Section target) {
     }
   }
 
+  foreach(clib; splitter(target.get("links"))) {
+    flags ~= fmtString("-L-l%s ", clib);
+  }
   return flags;
 }
 
