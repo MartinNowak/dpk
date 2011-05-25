@@ -21,8 +21,18 @@ struct DFlags {
       this.dinfo = DFlags.debuginfo.gc;
     if (!find(args, "-g").empty)
       this.dinfo = DFlags.debuginfo.g;
-    if (!find(args, "-v").empty)
-      this.verbose = true;
+
+    // deescalate verbosity of compiler by requiring -vv to forward -v
+    auto v = find(args, "-v");
+    if (!v.empty) {
+      this.verbose = 1;
+      v.front = "";
+    }
+    auto vv = find(args, "-vv");
+    if (!vv.empty) {
+      this.verbose = 2;
+      vv.front = "-v";
+    }
   }
 
   @property string suffix() const {
@@ -42,7 +52,7 @@ struct DFlags {
   uint wordsize = 32;
   debuginfo dinfo = debuginfo.no;
   bool profile, coverage;
-  bool verbose;
+  uint verbose;
 }
 
 unittest {
