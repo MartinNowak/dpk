@@ -49,7 +49,8 @@ struct DFlags {
   enum style { dbg, rls };
   enum debuginfo { no, gc, g };
   style buildstyle = style.rls;
-  uint wordsize = 32;
+  // TODO: ugly heuristic for dmd default wordsize
+  uint wordsize = size_t.sizeof == 8 ? 64 : 32;
   debuginfo dinfo = debuginfo.no;
   bool profile, coverage;
   uint verbose;
