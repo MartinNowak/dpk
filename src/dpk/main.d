@@ -4,8 +4,8 @@ import std.array, std.stdio, std.string;
 import dpk.build, dpk.ctx;
 
 enum usage = "usage dmd-pkg [build | clean | distclean | docs | imports |\n"
-  "\tinstall | list | uninstall] compilerflags";
-enum Mode { build, clean, distclean, docs, imports, install, list, uninstall };
+  "\tinstall | list | uninstall | test ] compilerflags";
+enum Mode { build, clean, distclean, docs, imports, install, list, uninstall, test };
 
 Mode getMode(ref string[] args) {
   if (args.empty)
@@ -49,5 +49,7 @@ int main(string[] args) {
     return runList(ctx);
   case Mode.uninstall:
     return runUninstall(ctx);
+  case Mode.test:
+    return runTest(ctx);
   }
 }

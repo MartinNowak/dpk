@@ -1,7 +1,7 @@
 module dpk.build;
 
 import std.algorithm, std.array, std.conv, std.exception, std.functional, std.path, std.stdio, std.string, std.range;
-import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util;
+import dpk.ctx, dpk.config, dpk.pkgdesc, dpk.install, dpk.util, dpk.utrunner;
 version (Posix) import core.sys.posix.sys.stat, std.string : toStringz;
 
 
@@ -37,7 +37,7 @@ int runImports(Ctx ctx) {
 }
 
 int runClean(Ctx ctx) {
-  foreach(dir; ["bin32", "bin64", "lib32", "lib64"]) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "test32", "test64"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
       writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
@@ -47,7 +47,7 @@ int runClean(Ctx ctx) {
 }
 
 int runDistClean(Ctx ctx) {
-  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "doc", "import"]) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "test32", "test64", "doc", "import"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
       writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
@@ -110,6 +110,28 @@ int runUninstall(Ctx ctx) {
   return 0;
 }
 
+int runTest(Ctx ctx) {
+  PkgDesc local;
+  if (collectException(ctx.pkgdesc, local)) {
+    stderr.writeln("failed to load dpk.cfg");
+    return 1;
+  }
+  string[] tests;
+  foreach(lib; local.sectsByType!("lib")()) {
+    tests ~= buildLibUt(ctx, lib, depFlags(ctx, lib));
+  }
+  foreach(bin; local.sectsByType!("bin")()) {
+    tests ~= buildBinUt(ctx, bin, depFlags(ctx, bin));
+  }
+  foreach(test; tests) {
+    if (ctx.verbose) writeln(test);
+    //    druntime currently quits with an EXIT_FAILURE if excecution is stopped
+    //    enforce(!std.process.system(test));
+    std.process.system(test);
+  }
+  return 0;
+}
+
 private:
 
 void buildLib(Ctx ctx, Section lib, string link) {
@@ -117,12 +139,28 @@ void buildLib(Ctx ctx, Section lib, string link) {
   auto srcs = resolveGlobs(lib.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto tgtpath = rel2abs(std.path.join(libDir(ctx), libpre ~ tgtName(ctx, lib) ~ libsuf));
+  auto tgtpath = rel2abs(std.path.join(libDir(ctx), libName(ctx, lib)));
   writeln("lib:\t", tgtpath);
   auto cmd = fmtString("dmd -lib %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
   if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
+}
+
+string buildLibUt(Ctx ctx, Section lib, string link) {
+  auto root = lib.get("root");
+  auto srcs = resolveGlobs(lib.get("srcs"), root);
+  enforce(!srcs.empty, new Exception("No sources found"));
+  srcs ~= rel2abs(createEmptyMainSrc(utDir(ctx)));
+  srcs ~= rel2abs(createUtRunnerSrc(utDir(ctx)));
+
+  auto tgtpath = rel2abs(std.path.join(utDir(ctx), binName(ctx, lib)));
+  writeln("utlib:\t", tgtpath);
+  auto cmd = fmtString("dmd %s -of%s %s %s",
+    join(uniq(ctx.args ~ "-unittest"), " "), tgtpath, join(srcs, " "), link);
+  if (ctx.verbose) writeln(cmd);
+  execCmdInDir(cmd, root);
+  return tgtpath;
 }
 
 void buildBin(Ctx ctx, Section bin, string link) {
@@ -136,6 +174,21 @@ void buildBin(Ctx ctx, Section bin, string link) {
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
   if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
+}
+
+string buildBinUt(Ctx ctx, Section bin, string link) {
+  auto root = bin.get("root");
+  auto srcs = resolveGlobs(bin.get("srcs"), root);
+  enforce(!srcs.empty, new Exception("No sources found"));
+  srcs ~= rel2abs(createUtRunnerSrc(utDir(ctx)));
+
+  auto tgtpath = rel2abs(std.path.join(utDir(ctx), binName(ctx, bin)));
+  writeln("utbin:\t", tgtpath);
+  auto cmd = fmtString("dmd %s -of%s %s %s",
+    join(uniq(ctx.args ~ "-unittest"), " "), tgtpath, join(srcs, " "), link);
+  if (ctx.verbose) writeln(cmd);
+  execCmdInDir(cmd, root);
+  return tgtpath;
 }
 
 void buildImports(Ctx ctx, Section tgt) {
@@ -251,6 +304,10 @@ string libDir(Ctx ctx) {
 
 string binDir(Ctx ctx) {
   return "bin" ~ to!string(ctx.dflags.wordsize);
+}
+
+string utDir(Ctx ctx) {
+  return "test" ~ to!string(ctx.dflags.wordsize);
 }
 
 string libName(Ctx ctx, Section lib) {
