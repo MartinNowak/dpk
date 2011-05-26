@@ -37,7 +37,7 @@ int runImports(Ctx ctx) {
 }
 
 int runClean(Ctx ctx) {
-  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "test32", "test64"]) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64", ".unittest32", ".unittest64"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
       writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
@@ -47,7 +47,7 @@ int runClean(Ctx ctx) {
 }
 
 int runDistClean(Ctx ctx) {
-  foreach(dir; ["bin32", "bin64", "lib32", "lib64", "test32", "test64", "doc", "import"]) {
+  foreach(dir; ["bin32", "bin64", "lib32", "lib64", ".unittest32", ".unittest64", "doc", "import"]) {
     if (std.file.exists(dir) && std.file.isDir(dir)) {
       writeln("clean:\t", dir);
       std.file.rmdirRecurse(dir);
@@ -307,7 +307,7 @@ string binDir(Ctx ctx) {
 }
 
 string utDir(Ctx ctx) {
-  return "test" ~ to!string(ctx.dflags.wordsize);
+  return ".unittest" ~ to!string(ctx.dflags.wordsize);
 }
 
 string libName(Ctx ctx, Section lib) {
