@@ -4,20 +4,20 @@ import std.stdio;
 import dpk.util;
 
 string createEmptyMainSrc(string dir) {
-  auto path = std.path.join(dir, "__emptyMain.d");
-  if (!std.file.exists(path)) {
+  if (!std.file.exists(dir))
     std.file.mkdirRecurse(dir);
+  auto path = std.path.join(dir, "__emptyMain.d");
+  if (!std.file.exists(path))
     std.file.write(path, "void main() {}");
-  }
   return path;
 }
 
 string createUtRunnerSrc(string dir) {
-  auto path = std.path.join(dir, "__utRunner.d");
-  if (!std.file.exists(path)) {
+  if (!std.file.exists(dir))
     std.file.mkdirRecurse(dir);
+  auto path = std.path.join(dir, "__utRunner.d");
+  if (!std.file.exists(path))
     std.file.write(path, utRunnerSrc);
-  }
   return path;
 }
 
