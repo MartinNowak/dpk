@@ -1,6 +1,7 @@
 module dpk.util;
 
-import std.array, std.exception, std.file, std.format, std.functional, std.path, std.regex, std.string;
+import std.array, std.exception, std.file, std.format,
+  std.functional, std.path, std.regex, std.string, std.c.process;
 
 string fmtString(Args...)(string fmt, Args args) {
   auto app = appender!string();
@@ -15,7 +16,7 @@ Range apply(alias fun, Range)(Range range) {
 }
 
 void execCmd(string cmd) {
-  enforce(!std.process.system(cmd),
+  enforce(std.c.process.system(toStringz(cmd)) == 0,
     new Exception(fmtString("Error executing cmd: \n\n %s", cmd)));
 }
 

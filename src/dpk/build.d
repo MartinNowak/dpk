@@ -125,9 +125,7 @@ int runTest(Ctx ctx) {
   }
   foreach(test; tests) {
     if (ctx.verbose) writeln(test);
-    //    druntime currently quits with an EXIT_FAILURE if excecution is stopped
-    //    enforce(!std.process.system(test));
-    std.process.system(test);
+    execCmd(test);
   }
   return 0;
 }
