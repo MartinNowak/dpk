@@ -31,12 +31,22 @@ string[] resolveGlobs(alias pred=unaryFun!(q{a.isFile}))(string globs, string ro
 
   string[] result;
   foreach(glob; splitter(globs)) {
-    auto matcher = reMatcher(glob);
-    foreach(DirEntry de; dirEntries(std.path.curdir, SpanMode.depth)) {
-      if (pred(de) && !match(de.name, matcher).empty) {
-        result ~= de.name;
+    bool found;
+    if (auto re = globsToRe(glob)) {
+      found = true; // not enforced to match for now
+      auto matcher = regex(re);
+      foreach(DirEntry de; dirEntries(std.path.curdir, SpanMode.depth)) {
+        if (pred(de) && !match(de.name, matcher).empty) {
+          result ~= de.name;
+        }
+      }
+    } else {
+      if (std.file.exists(glob)) {
+        result ~= glob;
+        found = true;
       }
     }
+    enforce(found, "no sources found for " ~ glob);
   }
   return result;
 }
@@ -110,10 +120,12 @@ void removeFile(string file) {
 
 private:
 
-auto reMatcher(string dpkmatcher) {
+string globsToRe(string dpkmatcher) {
   enum string seps = std.path.sep ~ std.path.altsep;
 
+  bool hasglobs;
   string translateGlobs(RegexMatch!string m) {
+    hasglobs = true;
     return enforce(
       m.hit == "**" ? ".+"
       : m.hit == "*" ? "[^" ~ seps ~ "]+"
@@ -122,14 +134,16 @@ auto reMatcher(string dpkmatcher) {
   }
   auto escaped = std.array.replace(dpkmatcher, r".", r"\.");
   auto re = std.regex.replace!(translateGlobs)(
-    escaped, regex(r"\*\*|\*", "g"));
+    escaped, regex(r"\*+", "g"));
 
-  return regex(re ~ "$");
+  return (hasglobs) ? re ~ "$" : null;
 }
 
 unittest {
   bool matches(string pattern, string path) {
-    return !match(path, reMatcher(pattern)).empty;
+    if (auto re = globsToRe(pattern))
+      return !match(path, regex(re)).empty;
+    return false;
   }
   assert(matches("foo/b*/src.d", "foo/bar/src.d"));
   assert(matches("foo/b**/src.d", "foo/bar/src.d"));
