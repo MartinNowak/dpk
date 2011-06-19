@@ -238,7 +238,7 @@ string depFlags(Ctx ctx, Section target) {
 
   if (!deps.empty) {
     flags = fmtString("-L-L%s ", installPath(ctx, libDir(ctx)));
-    foreach(dep; splitter(deps)) {
+    foreach(dep; std.array.splitter(deps)) {
       if (tolower(dep) == ctx.pkgdesc.name) {
         auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
         auto libs = ctx.pkgdesc.sectsByType!("lib")();
@@ -254,7 +254,7 @@ string depFlags(Ctx ctx, Section target) {
     }
   }
 
-  foreach(clib; splitter(target.get("links"))) {
+  foreach(clib; std.array.splitter(target.get("links"))) {
     flags ~= fmtString("-L-l%s ", clib);
   }
   return flags;
@@ -283,7 +283,7 @@ string[] installFolder(Ctx ctx, string dir) {
 void uninstallPkg(Ctx ctx, string pkgname) {
   auto pkgdesc = loadPkgDesc(ctx, pkgname);
 
-  foreach(file; splitter(pkgdesc.get("install").get("files"))) {
+  foreach(file; std.array.splitter(pkgdesc.get("install").get("files"))) {
     removeFile(installPath(ctx, file));
   }
   uninstallPkgDesc(ctx, pkgname);
