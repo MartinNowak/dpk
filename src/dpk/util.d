@@ -158,7 +158,7 @@ string globsToRe(string dpkmatcher) {
   string translateGlobs(RegexMatch!string m) {
     hasglobs = true;
     return enforce(
-      m.hit == "**" ? ".*"
+      m.hit == "**" ? ".+"
       : m.hit == "*" ? "[^" ~ seps ~ "]+"
       : null
     );
@@ -183,7 +183,7 @@ unittest {
     assert(matches("foo/*", r"D:\foo\a"));
     assert(!matches("foo/*", r"C:\foo\"));
     assert(matches("foo/**", r"C:\foo\a"));
-    assert(matches("foo/**", r"C:\foo\"));
+    assert(!matches("foo/**", r"C:\foo\"));
     assert(matches("foo/b**/src.d", r"C:\foo\bar\funk\src.d"));
     assert(matches("foo/b**src.d", r"C:\foo\bar\funk\src.d"));
   } else {
