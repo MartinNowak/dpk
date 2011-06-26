@@ -127,12 +127,14 @@ string globsToRe(string dpkmatcher) {
   string translateGlobs(RegexMatch!string m) {
     hasglobs = true;
     return enforce(
-      m.hit == "**" ? ".+"
+      m.hit == "**" ? ".*"
       : m.hit == "*" ? "[^" ~ seps ~ "]+"
       : null
     );
   }
   auto escaped = std.array.replace(dpkmatcher, r".", r"\.");
+  version(Windows)
+    escaped = std.array.replace(escaped, "/", r"\\");
   auto re = std.regex.replace!(translateGlobs)(
     escaped, regex(r"\*+", "g"));
 
@@ -145,29 +147,29 @@ unittest {
       return !match(path, regex(re)).empty;
     return false;
   }
-  assert(matches("foo/b*/src.d", "foo/bar/src.d"));
-  assert(matches("foo/b**/src.d", "foo/bar/src.d"));
-  assert(matches("foo/b**/src.d", "foo/bar/funk/src.d"));
-  assert(matches("foo/b**src.d", "foo/bar/funk/src.d"));
-  assert(matches("foo/b**/funk/src.d", "foo/bar/funk/src.d"));
-  assert(matches("foo/*.d", "foo/a.d"));
-  assert(matches("foo/*", "foo/a"));
-  assert(!matches("foo/*/*", "foo/a"));
-  assert(!matches("foo/*", "foo/"));
-  assert(!matches("foo/*.d", "foo/bar/a.d"));
-  assert(matches("foo/**", "foo/a"));
-  assert(!matches("foo/**", "foo/"));
-  assert(!matches("foo/**/.d", "foo/src.d"));
-  assert(matches("foo/**.d", "foo/src.d"));
-  assert(matches("foo/**.d", "foo/1/2/3/src.d"));
-
   version(Windows) {
-    assert(matches("foo/**.d", "foo\\1\\2\\3\\src.d"));
-    assert(matches("foo/*", "foo\\a"));
-    assert(!matches("foo/*", "foo\\"));
-    assert(matches("foo/**", "foo\\a"));
-    assert(matches("foo/**", "foo\\"));
-    assert(matches("foo/b**/src.d", "foo\\bar\\funk\\src.d"));
-    assert(matches("foo/b**src.d", "foo\\bar\\funk\\src.d"));
+    assert(matches("foo/**.d", r"C:\foo\1\2\3\src.d"));
+    assert(matches("foo/*", r"D:\foo\a"));
+    assert(!matches("foo/*", r"C:\foo\"));
+    assert(matches("foo/**", r"C:\foo\a"));
+    assert(matches("foo/**", r"C:\foo\"));
+    assert(matches("foo/b**/src.d", r"C:\foo\bar\funk\src.d"));
+    assert(matches("foo/b**src.d", r"C:\foo\bar\funk\src.d"));
+  } else {
+    assert(matches("foo/b*/src.d", "foo/bar/src.d"));
+    assert(matches("foo/b**/src.d", "foo/bar/src.d"));
+    assert(matches("foo/b**/src.d", "foo/bar/funk/src.d"));
+    assert(matches("foo/b**src.d", "foo/bar/funk/src.d"));
+    assert(matches("foo/b**/funk/src.d", "foo/bar/funk/src.d"));
+    assert(matches("foo/*.d", "foo/a.d"));
+    assert(matches("foo/*", "foo/a"));
+    assert(!matches("foo/*/*", "foo/a"));
+    assert(!matches("foo/*", "foo/"));
+    assert(!matches("foo/*.d", "foo/bar/a.d"));
+    assert(matches("foo/**", "foo/a"));
+    assert(!matches("foo/**", "foo/"));
+    assert(!matches("foo/**/.d", "foo/src.d"));
+    assert(matches("foo/**.d", "foo/src.d"));
+    assert(matches("foo/**.d", "foo/1/2/3/src.d"));
   }
 }
