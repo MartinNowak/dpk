@@ -4,7 +4,7 @@ import std.conv, std.file, std.path, std.stdio, std.string;
 import dpk.config, dpk.ctx, dpk.install, dpk.util;
 
 PkgDesc loadPkgDesc(Ctx ctx, string pkgbasename) {
-  auto descpath = installPath(ctx, "dpk", pkgbasename);
+  auto descpath = installPath(ctx, dpk.install.confdir, pkgbasename);
   if (!std.file.exists(descpath) || !std.file.isFile(descpath)) {
     throw new Exception(fmtString("Missing file %s.", descpath));
   }

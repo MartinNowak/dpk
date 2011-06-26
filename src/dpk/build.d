@@ -57,8 +57,13 @@ int runDistClean(Ctx ctx) {
 }
 
 int runList(Ctx ctx) {
-  foreach(pkg; ctx.installedPkgs) {
-    writeln("\t", getName(pkg));
+  writefln("Installed at \"%s\":", ctx.prefix);
+  if (auto pkgs = ctx.installedPkgs) {
+    foreach(pkg; pkgs) {
+      writeln("\t", getName(pkg));
+    }
+  } else {
+    writeln("\t", "None");
   }
   return 0;
 }
@@ -222,11 +227,25 @@ string depFlags(Ctx ctx, Section target) {
   auto deps = target.get("depends");
   string flags;
 
+  string pathFlag(string dir) {
+    version (Windows)
+      return fmtString("-L+%s\\ ", dir); // OPTLINK
+    else
+      return fmtString("-L-L%s ", dir); // GCC
+  }
+
+  string linkFlag(string dir) {
+    version (Windows)
+      return fmtString("-L+%s ", dir); // OPTLINK
+    else
+      return fmtString("-L-l%s ", dir); // GCC
+  }
+
   string pkgLinkFlags(PkgDesc pkgdesc) {
     string result;
     auto libs = pkgdesc.sectsByType!("lib")();
     foreach(lib; libs) {
-      result ~= fmtString("-L-l%s ", tgtName(ctx, lib));
+      result ~= linkFlag(tgtName(ctx, lib));
       result ~= depFlags(ctx, lib);
     }
     auto hdrs = pkgdesc.sectsByType!("headers")();
@@ -237,14 +256,14 @@ string depFlags(Ctx ctx, Section target) {
   }
 
   if (!deps.empty) {
-    flags = fmtString("-L-L%s ", installPath(ctx, libDir(ctx)));
+    flags = pathFlag(installPath(ctx, libDir(ctx)));
     foreach(dep; std.array.splitter(deps)) {
       if (tolower(dep) == ctx.pkgdesc.name) {
         auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
         auto libs = ctx.pkgdesc.sectsByType!("lib")();
         foreach(lib; chain(hdrs, libs))
           flags ~= fmtString("-I%s ", rel2abs(lib.get("root")));
-        flags ~= fmtString("-L-L%s ", rel2abs(libDir(ctx)));
+        flags ~= pathFlag(rel2abs(libDir(ctx)));
         flags ~= pkgLinkFlags(ctx.pkgdesc);
       } else if (auto cfgname = findPkgByName(ctx, dep)) {
         flags ~= pkgLinkFlags(loadPkgDesc(ctx, cfgname));
@@ -255,7 +274,7 @@ string depFlags(Ctx ctx, Section target) {
   }
 
   foreach(clib; std.array.splitter(target.get("links"))) {
-    flags ~= fmtString("-L-l%s ", clib);
+    flags ~= linkFlag(clib);
   }
   return flags;
 }

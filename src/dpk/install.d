@@ -11,6 +11,8 @@ string findPkgByName(Ctx ctx, string pkgname) {
   return matches.empty ? null : matches.front;
 }
 
+enum confdir = "conf.d";
+
 string installPath(Ctx ctx, string subdir, string relpath=null) {
   return std.path.join(std.path.join(ctx.prefix, subdir), relpath);
 }
@@ -20,19 +22,19 @@ void installPkgDesc(Ctx ctx) {
 
   auto pkgsect = pkgdesc.get("pkg");
   auto pkgname = fmtString("%s-%s.cfg", pkgsect.get("name"), pkgsect.get("version"));
-  auto dpkdir = installPath(ctx, "dpk");
-  if (!std.file.exists(dpkdir))
-    mkdirRecurse(dpkdir);
+  auto confd = installPath(ctx, confdir);
+  if (!std.file.exists(confd))
+    mkdirRecurse(confd);
 
   pkgdesc.sections ~= makeInstallSect(ctx);
-  auto pkgdescpath = join(dpkdir, pkgname);
+  auto pkgdescpath = join(confd, pkgname);
   if (std.file.exists(pkgdescpath))
     mergePkgDescs(pkgdesc, PkgDesc(parseConfig(pkgdescpath)));
   writeConfig(pkgdesc, pkgdescpath);
 }
 
 void uninstallPkgDesc(Ctx ctx, string pkgname) {
-  removeFile(installPath(ctx, "dpk", pkgname));
+  removeFile(installPath(ctx, confdir, pkgname));
 }
 
 Section makeInstallSect(Ctx ctx) {
