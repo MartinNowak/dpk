@@ -99,13 +99,17 @@ string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
 }
 
 bool isDirEmpty(string dir) {
+  // @@ BUG @@ directly returning false from foreach is broken
+  bool res = true;
   foreach(string _; dirEntries(dir, SpanMode.shallow)) {
-    return false;
+    res = false;
+    break;
   }
-  return true;
+  return res;
 }
 
 void removeFile(string file) {
+  assert(std.path.isabs(file));
   try {
     std.file.remove(file);
     auto dir = dirname(file);
@@ -116,6 +120,33 @@ void removeFile(string file) {
   } catch (Exception e) {
     std.stdio.stderr.writeln(e.toString());
   }
+}
+
+string __iniFilePath;
+string __tmpFile;
+static ~this() {
+  if (__tmpFile)
+    removeFile(__tmpFile);
+}
+
+string dmdIniFilePath() {
+  if (__iniFilePath)
+    return __iniFilePath;
+
+  __tmpFile = std.path.rel2abs("__dmd_config_dump");
+  std.process.system("dmd -v nonexistentfile > " ~ __tmpFile);
+  auto f = std.stdio.File(__tmpFile, "r");
+  string inifile;
+  foreach(line; f.byLine()) {
+    if (!line.startsWith("config"))
+      continue;
+    auto parts = line.split();
+    enforce(parts.length > 1, "can't read output of dmd config " ~ line);
+    __iniFilePath = parts[1].idup.strip();
+    break;
+  }
+  f.close();
+  return __iniFilePath;
 }
 
 private:

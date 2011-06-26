@@ -59,8 +59,9 @@ class Ctx {
 
   @property Section dpkcfg() {
     if (!this.hasdpkcfg) {
-      this._dpkcfg = parseConfig("/etc/dmd.conf").get("dpk",
-        new Exception("Missing [dpk] section in dmd.conf"));
+      this._dpkcfg = parseConfig(dmdIniFilePath()).get("dpk",
+        new Exception("Missing [dpk] section in dmd config \""
+          ~ dmdIniFilePath() ~ "\""));
       this.hasdpkcfg = true;
     }
 
