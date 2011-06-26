@@ -49,8 +49,10 @@ class Ctx {
 
   @property string[] installedPkgs() {
     if (!this.hasinstalledPkgs) {
-      this._installedPkgs = apply!basename(
-        resolveGlobs("*.cfg", join(this.prefix, "dpk")));
+      auto confd = join(this.prefix, dpk.install.confdir);
+      if (std.file.exists(confd) && std.file.isDir(confd))
+        this._installedPkgs = apply!basename(
+          resolveGlobs("*.cfg", confd));
       this.hasinstalledPkgs = true;
     }
 

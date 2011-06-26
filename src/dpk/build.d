@@ -57,8 +57,13 @@ int runDistClean(Ctx ctx) {
 }
 
 int runList(Ctx ctx) {
-  foreach(pkg; ctx.installedPkgs) {
-    writeln("\t", getName(pkg));
+  writefln("Installed at \"%s\":", ctx.prefix);
+  if (auto pkgs = ctx.installedPkgs) {
+    foreach(pkg; pkgs) {
+      writeln("\t", getName(pkg));
+    }
+  } else {
+    writeln("\t", "None");
   }
   return 0;
 }
