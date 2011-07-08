@@ -98,7 +98,7 @@ Config parseConfig(string filepath) {
       auto m = match(line, propRe);
       if (!m.empty) {
         auto prop = strip(m.captures[1]);
-        tolowerInPlace(prop);
+        toLowerInPlace(prop);
         auto val = strip(m.captures[2]);
         curSect[prop.idup] = chompPrefix(chomp(val, "\""), "\"").idup;
       } else if (!match(line, sectRe).empty) {
@@ -110,7 +110,7 @@ Config parseConfig(string filepath) {
       auto m = match(line, sectRe);
       if (!m.empty) {
         auto name = m.captures[1];
-        tolowerInPlace(name);
+        toLowerInPlace(name);
         curSect = Section(name.idup);
         insection = true;
       }

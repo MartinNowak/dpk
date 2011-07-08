@@ -4,7 +4,7 @@ import std.algorithm, std.array, std.exception, std.file, std.path, std.range, s
 import dpk.config, dpk.ctx, dpk.pkgdesc, dpk.util;
 
 string findPkgByName(Ctx ctx, string pkgname) {
-  auto not = (string e) { return !std.algorithm.startsWith(tolower(e), tolower(pkgname)); };
+  auto not = (string e) { return !std.algorithm.startsWith(toLower(e), toLower(pkgname)); };
   auto matches = std.algorithm.partition!(not)(ctx.installedPkgs);
   enforce(matches.length <= 1,
     new Exception(fmtString("Ambiguous package %s matches %s.", pkgname, matches)));

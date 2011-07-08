@@ -11,7 +11,7 @@ Mode getMode(ref string[] args) {
   if (args.empty)
     return Mode.build;
 
-  auto mode = tolower(args.front);
+  auto mode = toLower(args.front);
   foreach(i, name; __traits(allMembers, Mode)) {
     if (name == mode) {
       args.popFront;

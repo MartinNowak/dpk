@@ -258,7 +258,7 @@ string depFlags(Ctx ctx, Section target) {
   if (!deps.empty) {
     flags = pathFlag(installPath(ctx, libDir(ctx)));
     foreach(dep; std.array.splitter(deps)) {
-      if (tolower(dep) == ctx.pkgdesc.name) {
+      if (toLower(dep) == ctx.pkgdesc.name) {
         auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
         auto libs = ctx.pkgdesc.sectsByType!("lib")();
         foreach(lib; chain(hdrs, libs))

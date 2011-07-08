@@ -26,7 +26,7 @@ module _utrunner;
 
 import core.runtime;
 import std.algorithm : min, max;
-import std.array : rjustify;
+import std.string : rightJustify;
 import std.datetime;
 import std.stdio : writeln, writefln;
 
@@ -50,11 +50,11 @@ bool unittestrunner()
 	try
 	{
 	  fp();
-	  msg ~= " OK".rjustify(max(0, 79 - msg.length));
+	  msg ~= " OK".rightJustify(max(0, 79 - msg.length));
 	}
 	catch( Throwable e )
 	{
-	  msg ~= " FAILED".rjustify(max(0, 79 - msg.length))
+	  msg ~= " FAILED".rightJustify(max(0, 79 - msg.length))
 	    ~ "\n" ~ e.toString ~ "\n";
 	  ++failCnt;
 	}

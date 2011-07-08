@@ -25,7 +25,7 @@ struct PkgDesc {
   }
 
   @property string name() const {
-    return tolower(this.pkgSect().get("name"));
+    return toLower(this.pkgSect().get("name"));
   }
 
 private:
