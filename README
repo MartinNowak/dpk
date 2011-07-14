@@ -1,1 +1,17 @@
 simple package tool to build/install repositories
+
+Installation:
+  - You need to set an installation prefix in your dmd.conf/sc.ini by adding a [dpk] section
+
+    [dpk]
+    # mandatory
+    PREFIX = "~/.local/D"
+    # optional
+    DEFAULTARGS = "-debug -gc -w -unittest"
+
+  - Run "boot.sh | boot.bat" which will build a binary "dpk_boot"
+  - Run "dpk_boot" to build an installation binary or alternatively run
+    "dpk_boot install" to install dpk into your prefix dir
+
+Usage:
+  - Have a look at the examples directory for further instructions
