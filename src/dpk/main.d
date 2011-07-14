@@ -3,8 +3,10 @@ module dpk.main;
 import std.array, std.stdio, std.string;
 import dpk.build, dpk.ctx;
 
-enum usage = "usage dmd-pkg [build | clean | distclean | docs | imports |\n"
-  "\tinstall | list | uninstall | test ] compilerflags";
+enum usage = "usage: dpk <CMD> <DFLAGS>
+CMD:
+  build | clean | distclean | docs | imports | install | list | uninstall | test
+";
 enum Mode { build, clean, distclean, docs, imports, install, list, uninstall, test };
 
 Mode getMode(ref string[] args) {
