@@ -135,7 +135,8 @@ int runTest(Ctx ctx) {
   }
   foreach(test; tests) {
     if (ctx.verbose) writeln(test);
-    execCmd(test);
+    immutable ignoreRC = true;
+    execCmd(test, ignoreRC);
   }
   return 0;
 }

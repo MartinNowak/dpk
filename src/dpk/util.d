@@ -15,8 +15,8 @@ Range apply(alias fun, Range)(Range range) {
   return range;
 }
 
-void execCmd(string cmd) {
-  enforce(std.c.process.system(toStringz(cmd)) == 0,
+void execCmd(string cmd, bool ignoreRC=false) {
+  enforce(std.c.process.system(toStringz(cmd)) == 0 || ignoreRC,
     new Exception(fmtString("Error executing cmd: \n\n %s", cmd)));
 }
 
