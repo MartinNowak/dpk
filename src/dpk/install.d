@@ -14,7 +14,7 @@ string findPkgByName(Ctx ctx, string pkgname) {
 enum confdir = "conf.d";
 
 string installPath(Ctx ctx, string subdir, string relpath=null) {
-  return std.path.join(std.path.join(ctx.prefix, subdir), relpath);
+  return buildPath(buildPath(ctx.prefix, subdir), relpath);
 }
 
 void installPkgDesc(Ctx ctx) {
@@ -27,7 +27,7 @@ void installPkgDesc(Ctx ctx) {
     mkdirRecurse(confd);
 
   pkgdesc.sections ~= makeInstallSect(ctx);
-  auto pkgdescpath = join(confd, pkgname);
+  auto pkgdescpath = buildPath(confd, pkgname);
   if (std.file.exists(pkgdescpath))
     mergePkgDescs(pkgdesc, PkgDesc(parseConfig(pkgdescpath)));
   writeConfig(pkgdesc, pkgdescpath);

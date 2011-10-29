@@ -61,7 +61,7 @@ struct DirChanger {
 }
 
 string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
-  tgtdir = rel2abs(tgtdir);
+  tgtdir = absolutePath(tgtdir);
   if (!exists(tgtdir))
     mkdirRecurse(tgtdir);
   enforce(isDir(tgtdir), new Exception(
@@ -74,7 +74,7 @@ string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
   scope(failure) foreach(dir; createdDirs) { std.file.rmdir(dir); }
 
   foreach(dir; dirs) {
-    auto subdir = join(tgtdir, dir);
+    auto subdir = buildPath(tgtdir, dir);
     if (!exists(subdir)) {
       createdDirs ~= subdir;
       mkdirRecurse(subdir);
@@ -86,14 +86,14 @@ string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
 
   auto files = resolveGlobs!(unaryFun!(q{a.isFile}))(globs);
   foreach(file; files) {
-    auto tgtfile = join(tgtdir, file);
+    auto tgtfile = buildPath(tgtdir, file);
     if (std.file.exists(tgtfile))
       std.file.remove(tgtfile);
 
     std.file.copy(file, tgtfile);
   }
   string prefixDir(string path) {
-    return std.path.join(root, chompPrefix(path, std.path.curdir ~ std.path.sep));
+    return buildPath(root, chompPrefix(path, std.path.curdir ~ std.path.sep));
   }
   return apply!prefixDir(files);
 }
@@ -109,13 +109,13 @@ bool isDirEmpty(string dir) {
 }
 
 void removeFile(string file) {
-  assert(std.path.isabs(file));
+  assert(std.path.isAbsolute(file));
   try {
     std.file.remove(file);
-    auto dir = dirname(file);
+    auto dir = dirName(file);
     while (isDirEmpty(dir)) {
       std.file.rmdir(dir);
-      dir = dirname(dir);
+      dir = dirName(dir);
     }
   } catch (Exception e) {
     std.stdio.stderr.writeln(e.toString());
@@ -133,7 +133,7 @@ string dmdIniFilePath() {
   if (__iniFilePath)
     return __iniFilePath;
 
-  __tmpFile = std.path.rel2abs("__dmd_config_dump");
+  __tmpFile = absolutePath("__dmd_config_dump");
   std.process.system("dmd -v nonexistentfile > " ~ __tmpFile);
   auto f = std.stdio.File(__tmpFile, "r");
   string inifile;

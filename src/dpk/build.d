@@ -60,7 +60,7 @@ int runList(Ctx ctx) {
   writefln("Installed at \"%s\":", ctx.prefix);
   if (auto pkgs = ctx.installedPkgs) {
     foreach(pkg; pkgs) {
-      writeln("\t", getName(pkg));
+      writeln("\t", stripExtension(pkg));
     }
   } else {
     writeln("\t", "None");
@@ -94,7 +94,7 @@ int runInstall(Ctx ctx) {
 int runUninstall(Ctx ctx) {
   void uninstall(string hint) {
     if (auto pkg = findPkgByName(ctx, hint)) {
-      writeln("uninstall:\t", getName(pkg));
+      writeln("uninstall:\t", stripExtension(pkg));
       uninstallPkg(ctx, pkg);
     }
   }
@@ -148,7 +148,7 @@ void buildLib(Ctx ctx, Section lib, string link) {
   auto srcs = resolveGlobs(lib.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto tgtpath = rel2abs(std.path.join(libDir(ctx), libName(ctx, lib)));
+  auto tgtpath = absolutePath(buildPath(libDir(ctx), libName(ctx, lib)));
   writeln("lib:\t", tgtpath);
   auto cmd = fmtString("dmd -lib %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
@@ -160,10 +160,10 @@ string buildLibUt(Ctx ctx, Section lib, string link) {
   auto root = lib.get("root");
   auto srcs = resolveGlobs(lib.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
-  srcs ~= rel2abs(createEmptyMainSrc(utDir(ctx)));
-  srcs ~= rel2abs(createUtRunnerSrc(utDir(ctx)));
+  srcs ~= absolutePath(createEmptyMainSrc(utDir(ctx)));
+  srcs ~= absolutePath(createUtRunnerSrc(utDir(ctx)));
 
-  auto tgtpath = rel2abs(std.path.join(utDir(ctx), binName(ctx, lib)));
+  auto tgtpath = absolutePath(buildPath(utDir(ctx), binName(ctx, lib)));
   writeln("utlib:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(uniq(ctx.args ~ "-unittest"), " "), tgtpath, join(srcs, " "), link);
@@ -177,7 +177,7 @@ void buildBin(Ctx ctx, Section bin, string link) {
   auto srcs = resolveGlobs(bin.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto tgtpath = rel2abs(std.path.join(binDir(ctx), binName(ctx, bin)));
+  auto tgtpath = absolutePath(buildPath(binDir(ctx), binName(ctx, bin)));
   writeln("bin:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(ctx.args, " "), tgtpath, join(srcs, " "), link);
@@ -189,9 +189,9 @@ string buildBinUt(Ctx ctx, Section bin, string link) {
   auto root = bin.get("root");
   auto srcs = resolveGlobs(bin.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
-  srcs ~= rel2abs(createUtRunnerSrc(utDir(ctx)));
+  srcs ~= absolutePath(createUtRunnerSrc(utDir(ctx)));
 
-  auto tgtpath = rel2abs(std.path.join(utDir(ctx), binName(ctx, bin)));
+  auto tgtpath = absolutePath(buildPath(utDir(ctx), binName(ctx, bin)));
   writeln("utbin:\t", tgtpath);
   auto cmd = fmtString("dmd %s -of%s %s %s",
     join(uniq(ctx.args ~ "-unittest"), " "), tgtpath, join(srcs, " "), link);
@@ -205,7 +205,7 @@ void buildImports(Ctx ctx, Section tgt) {
   auto srcs = resolveGlobs(tgt.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto imppath = rel2abs("import");
+  auto imppath = absolutePath("import");
   writeln("imports:\t", imppath);
   auto cmd = fmtString("dmd -c -o- -op -Hd%s %s", imppath, join(srcs, " "));
   if (ctx.verbose) writeln(cmd);
@@ -217,7 +217,7 @@ void buildDocs(Ctx ctx, Section tgt) {
   auto srcs = resolveGlobs(tgt.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
-  auto docpath = rel2abs("doc");
+  auto docpath = absolutePath("doc");
   writeln("docs:\t", docpath);
   auto cmd = fmtString("dmd -c -o- -op -Dd%s %s", docpath, join(srcs, " "));
   if (ctx.verbose) writeln(cmd);
@@ -263,8 +263,8 @@ string depFlags(Ctx ctx, Section target) {
         auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
         auto libs = ctx.pkgdesc.sectsByType!("lib")();
         foreach(lib; chain(hdrs, libs))
-          flags ~= fmtString("-I%s ", rel2abs(lib.get("root")));
-        flags ~= pathFlag(rel2abs(libDir(ctx)));
+          flags ~= fmtString("-I%s ", absolutePath(lib.get("root")));
+        flags ~= pathFlag(absolutePath(libDir(ctx)));
         flags ~= pkgLinkFlags(ctx.pkgdesc);
       } else if (auto cfgname = findPkgByName(ctx, dep)) {
         flags ~= pkgLinkFlags(loadPkgDesc(ctx, cfgname));
@@ -285,7 +285,7 @@ string[] installBin(Ctx ctx, Section bin) {
   auto binname = binName(ctx, bin);
   auto files = copyRel(instpath, binname, binDir(ctx));
   version (Posix)
-    core.sys.posix.sys.stat.chmod(toStringz(join(instpath, binname)), octal!755);
+    core.sys.posix.sys.stat.chmod(toStringz(buildPath(instpath, binname)), octal!755);
   return files;
 }
 

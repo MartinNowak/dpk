@@ -1,12 +1,12 @@
 module dpk.utrunner;
 
-import std.stdio;
+import std.path, std.stdio;
 import dpk.util;
 
 string createEmptyMainSrc(string dir) {
   if (!std.file.exists(dir))
     std.file.mkdirRecurse(dir);
-  auto path = std.path.join(dir, "__emptyMain.d");
+  auto path = buildPath(dir, "__emptyMain.d");
   if (!std.file.exists(path))
     std.file.write(path, "void main() {}");
   return path;
@@ -15,7 +15,7 @@ string createEmptyMainSrc(string dir) {
 string createUtRunnerSrc(string dir) {
   if (!std.file.exists(dir))
     std.file.mkdirRecurse(dir);
-  auto path = std.path.join(dir, "__utRunner.d");
+  auto path = buildPath(dir, "__utRunner.d");
   if (!std.file.exists(path))
     std.file.write(path, utRunnerSrc);
   return path;

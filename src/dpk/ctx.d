@@ -37,7 +37,7 @@ class Ctx {
 
   @property string prefix() {
     if (!this.hasprefix) {
-      this._prefix = environment.get("PREFIX");
+      this._prefix = std.process.environment.get("PREFIX");
       if (this._prefix is null)
         this._prefix = this.dpkcfg.get("prefix");
       this._prefix = std.path.expandTilde(this._prefix);
@@ -49,10 +49,10 @@ class Ctx {
 
   @property string[] installedPkgs() {
     if (!this.hasinstalledPkgs) {
-      auto confd = join(this.prefix, dpk.install.confdir);
+      auto confd = buildPath(this.prefix, dpk.install.confdir);
       if (std.file.exists(confd) && std.file.isDir(confd))
         this._installedPkgs = sort(
-            apply!basename(
+            apply!baseName(
                 resolveGlobs("*.cfg", confd))
         ).release;
       this.hasinstalledPkgs = true;
