@@ -155,7 +155,7 @@ string globsToRe(string dpkmatcher) {
   enum string seps = std.path.sep ~ std.path.altsep;
 
   bool hasglobs;
-  string translateGlobs(RegexMatch!string m) {
+  string translateGlobs(Captures!(string, size_t) m) {
     hasglobs = true;
     return enforce(
       m.hit == "**" ? ".+"
