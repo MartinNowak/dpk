@@ -1,6 +1,6 @@
 module dpk.ctx;
 
-import std.algorithm, std.array, std.bitmanip, std.functional, std.path, std.process;
+import std.algorithm, std.array, std.bitmanip, std.conv, std.functional, std.path, std.process;
 import dpk.config, dpk.dflags, dpk.pkgdesc, dpk.util;
 
 class Ctx {
@@ -11,6 +11,7 @@ class Ctx {
   Section _dpkcfg;
   PkgDesc _pkgdesc;
   DFlags _dflags;
+  bool _sharedLibs;
   string[] installedFiles;
 
   mixin(bitfields!(
@@ -20,7 +21,8 @@ class Ctx {
           bool, "hasdpkcfg", 1,
           bool, "haspkgdesc", 1,
           bool, "hasdflags", 1,
-          uint, "", 2,
+          bool, "hasshared", 1,
+          uint, "", 1,
         ));
 
   this(string[] args) {
@@ -49,6 +51,18 @@ class Ctx {
     }
 
     return this._prefix;
+  }
+
+  @property bool sharedLibs() {
+    if (!this.hasshared) {
+      auto val = std.process.environment.get("SHARED");
+      if (val is null)
+        val = this.dpkcfg.get("shared");
+      this._sharedLibs = to!bool(val);
+      this.hasshared = true;
+    }
+
+    return this._sharedLibs;
   }
 
   @property string[] installedPkgs() {

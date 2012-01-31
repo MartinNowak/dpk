@@ -150,8 +150,9 @@ void buildLib(Ctx ctx, Section lib, string link) {
 
   auto tgtpath = absolutePath(buildPath(libDir(ctx), libName(ctx, lib)));
   writeln("lib:\t", tgtpath);
-  auto cmd = fmtString("dmd -shared -fPIC %s -of%s %s %s",
-    join(ctx.args, " "), tgtpath, join(srcs, " "), link);
+  auto shflags = ctx.sharedLibs ? "-shared -fPIC" : "-lib";
+  auto cmd = fmtString("dmd %s %s -of%s %s %s",
+      shflags, join(ctx.args, " "), tgtpath, join(srcs, " "), link);
   if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
@@ -311,12 +312,14 @@ void uninstallPkg(Ctx ctx, string pkgname) {
 
 version (Posix) {
   enum libpre = "lib";
-  enum libsuf = ".so";
+  enum sosuf = ".so";
+  enum arsuf = ".a";
   enum binpre = "";
   enum binsuf = "";
 } else version (Windows) {
   enum libpre = "";
-  enum libsuf = ".dll";
+  enum sosuf = ".dll";
+  enum arsuf = ".lib";
   enum binpre = "";
   enum binsuf = ".exe";
 }
@@ -334,7 +337,7 @@ string utDir(Ctx ctx) {
 }
 
 string libName(Ctx ctx, Section lib) {
-  return libpre ~ tgtName(ctx, lib) ~ libsuf;
+    return libpre ~ tgtName(ctx, lib) ~ (ctx.sharedLibs ? sosuf : arsuf);
 }
 
 string binName(Ctx ctx, Section bin) {
