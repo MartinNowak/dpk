@@ -4,7 +4,8 @@ import std.algorithm, std.array, std.bitmanip, std.functional, std.path, std.pro
 import dpk.config, dpk.dflags, dpk.pkgdesc, dpk.util;
 
 class Ctx {
-  string[] _args;
+  string[] _cmdargs;
+  string[] _defaultargs;
   string _prefix;
   string[] _installedPkgs;
   Section _dpkcfg;
@@ -13,7 +14,7 @@ class Ctx {
   string[] installedFiles;
 
   mixin(bitfields!(
-          bool, "hasargs", 1,
+          bool, "hasdefaultargs", 1,
           bool, "hasprefix", 1,
           bool, "hasinstalledPkgs", 1,
           bool, "hasdpkcfg", 1,
@@ -23,16 +24,19 @@ class Ctx {
         ));
 
   this(string[] args) {
-    this._args = args;
+    this._cmdargs = args;
   }
 
   @property string[] args() {
-    if (!this.hasargs) {
-      if (this._args.empty)
-        this._args = split(this.dpkcfg.get("defaultargs"));
-      this.hasargs = true;
+    return this.dflags.args;
+  }
+
+  @property string[] defaultargs() {
+    if (!this.hasdefaultargs) {
+        this._defaultargs = split(this.dpkcfg.get("defaultargs"));
+      this.hasdefaultargs = true;
     }
-    return this._args;
+    return this._defaultargs;
   }
 
   @property string prefix() {
@@ -83,7 +87,7 @@ class Ctx {
 
   @property DFlags dflags() {
     if (!this.hasdflags) {
-      this._dflags = DFlags(this.args);
+      this._dflags = DFlags(this._cmdargs, this.defaultargs);
       this.hasdflags = true;
     }
 
