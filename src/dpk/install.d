@@ -45,6 +45,7 @@ Section makeInstallSect(Ctx ctx) {
 }
 
 void mergePkgDescs(ref PkgDesc newpkg, PkgDesc existing) {
-  auto cat = sort(split(newpkg.get("install")["files"]) ~ split(existing.get("install")["files"]));
-  newpkg.get("install")["files"] = join(uniq(cat), " ");
+  auto cat = sort(split(newpkg.get("install").props["files"]) ~
+                  split(existing.get("install").props["files"]));
+  newpkg.get("install").props["files"] = join(uniq(cat), " ");
 }
