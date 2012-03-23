@@ -225,60 +225,84 @@ void buildDocs(Ctx ctx, Section tgt) {
   execCmdInDir(cmd, root);
 }
 
-string depFlags(Ctx ctx, Section target) {
-  auto deps = target.get("depends");
-  string flags;
+string depFlags(Ctx ctx, Section target)
+{
+    bool[string] visited;
+    return depFlags(ctx, target, visited);
+}
 
-  string pathFlag(string dir) {
-    version (Windows)
-      return fmtString("-L+%s\\ ", dir); // OPTLINK
-    else
-      return fmtString("-L-L%s ", dir); // GCC
-  }
+string depFlags(Ctx ctx, Section target, ref bool[string] visited)
+{
+    auto deps = target.get("depends");
+    string flags;
 
-  string linkFlag(string dir) {
-    version (Windows)
-      return fmtString("-L+%s ", dir); // OPTLINK
-    else
-      return fmtString("-L-l%s ", dir); // GCC
-  }
-
-  string pkgLinkFlags(PkgDesc pkgdesc) {
-    string result;
-    auto libs = pkgdesc.sectsByType!("lib")();
-    foreach(lib; libs) {
-      result ~= linkFlag(tgtName(ctx, lib));
-      result ~= depFlags(ctx, lib);
+    string pathFlag(string dir)
+    {
+        version (Windows)
+            return fmtString("-L+%s\\ ", dir); // OPTLINK
+        else
+            return fmtString("-L-L%s ", dir); // GCC
     }
-    auto hdrs = pkgdesc.sectsByType!("headers")();
-    foreach(hdr; hdrs) {
-      result ~= depFlags(ctx, hdr);
-    }
-    return result;
-  }
 
-  if (!deps.empty) {
-    flags = pathFlag(installPath(ctx, libDir(ctx)));
-    foreach(dep; std.array.splitter(deps)) {
-      if (toLower(dep) == ctx.pkgdesc.name) {
-        auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
-        auto libs = ctx.pkgdesc.sectsByType!("lib")();
-        foreach(lib; chain(hdrs, libs))
-          flags ~= fmtString("-I%s ", absolutePath(lib.get("root")));
-        flags ~= pathFlag(absolutePath(libDir(ctx)));
-        flags ~= pkgLinkFlags(ctx.pkgdesc);
-      } else if (auto cfgname = findPkgByName(ctx, dep)) {
-        flags ~= pkgLinkFlags(loadPkgDesc(ctx, cfgname));
-      } else {
-        throw new Exception(fmtString("Missing pkg dependecy %s", dep));
-      }
+    string linkFlag(string dir)
+    {
+        version (Windows)
+            return fmtString("-L+%s ", dir); // OPTLINK
+        else
+            return fmtString("-L-l%s ", dir); // GCC
     }
-  }
 
-  foreach(clib; std.array.splitter(target.get("links"))) {
-    flags ~= linkFlag(clib);
-  }
-  return flags;
+    string pkgLinkFlags(PkgDesc pkgdesc)
+    {
+        string result;
+        auto libs = pkgdesc.sectsByType!("lib")();
+        foreach(lib; libs)
+        {
+            result ~= linkFlag(tgtName(ctx, lib));
+            result ~= depFlags(ctx, lib, visited);
+        }
+        auto hdrs = pkgdesc.sectsByType!("headers")();
+        foreach(hdr; hdrs)
+        {
+            result ~= depFlags(ctx, hdr, visited);
+        }
+        return result;
+    }
+
+    if (!deps.empty)
+    {
+        flags = pathFlag(installPath(ctx, libDir(ctx)));
+        foreach(dep; std.array.splitter(deps))
+        {
+            if (dep !in visited)
+                visited[dep] = true;
+            else
+                continue;
+
+            if (dep == ctx.pkgdesc.name)
+            {
+                auto hdrs = ctx.pkgdesc.sectsByType!("headers")();
+                auto libs = ctx.pkgdesc.sectsByType!("lib")();
+                foreach(lib; chain(hdrs, libs))
+                    flags ~= fmtString("-I%s ", absolutePath(lib.get("root")));
+                flags ~= pathFlag(absolutePath(libDir(ctx)));
+                flags ~= pkgLinkFlags(ctx.pkgdesc);
+            }
+            else if (auto cfgname = findPkgByName(ctx, dep))
+            {
+                flags ~= pkgLinkFlags(loadPkgDesc(ctx, cfgname));
+            }
+            else
+            {
+                throw new Exception(fmtString("Missing pkg dependecy %s", dep));
+            }
+        }
+    }
+
+    foreach(clib; std.array.splitter(target.get("links")))
+        flags ~= linkFlag(clib);
+
+    return flags;
 }
 
 string[] installBin(Ctx ctx, Section bin) {
