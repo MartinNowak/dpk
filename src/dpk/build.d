@@ -208,7 +208,7 @@ void buildImports(Ctx ctx, Section tgt) {
 
   auto imppath = absolutePath("import");
   writeln("imports:\t", imppath);
-  auto cmd = fmtString("dmd -c -o- -op -Hd%s %s", imppath, join(srcs, " "));
+  auto cmd = fmtString("dmd -c -o- -op -I%s -Hd%s %s", imppath, imppath, join(srcs, " "));
   if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
@@ -218,9 +218,10 @@ void buildDocs(Ctx ctx, Section tgt) {
   auto srcs = resolveGlobs(tgt.get("srcs"), root);
   enforce(!srcs.empty, new Exception("No sources found"));
 
+  auto imppath = absolutePath("import");
   auto docpath = absolutePath("doc");
   writeln("docs:\t", docpath);
-  auto cmd = fmtString("dmd -c -o- -op -Dd%s %s", docpath, join(srcs, " "));
+  auto cmd = fmtString("dmd -c -o- -op -I%s -Dd%s %s", imppath, docpath, join(srcs, " "));
   if (ctx.verbose) writeln(cmd);
   execCmdInDir(cmd, root);
 }
