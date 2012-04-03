@@ -257,16 +257,11 @@ string depFlags(Ctx ctx, Section target, ref bool[string] visited)
     {
         string result;
         auto libs = pkgdesc.sectsByType!("lib")();
-        foreach(lib; libs)
-        {
-            result ~= linkFlag(tgtName(ctx, lib));
-            result ~= depFlags(ctx, lib, visited);
-        }
         auto hdrs = pkgdesc.sectsByType!("headers")();
-        foreach(hdr; hdrs)
-        {
-            result ~= depFlags(ctx, hdr, visited);
-        }
+        foreach(lib; libs)
+            result ~= linkFlag(tgtName(ctx, lib));
+        foreach(dep; chain(hdrs, libs))
+            result ~= depFlags(ctx, dep, visited);
         return result;
     }
 
