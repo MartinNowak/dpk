@@ -12,7 +12,7 @@ PkgDesc loadPkgDesc(Ctx ctx, string pkgbasename) {
 }
 
 PkgDesc loadLocalPkgDesc() {
-  return PkgDesc(parseConfig(buildPath(curdir, "dpk.cfg")));
+  return PkgDesc(parseConfig(buildPath(".", "dpk.cfg")));
 }
 
 struct PkgDesc {

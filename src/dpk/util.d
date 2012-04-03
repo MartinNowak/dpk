@@ -26,7 +26,7 @@ void execCmdInDir(string cmd, string dir) {
   execCmd(cmd);
 }
 
-string[] resolveGlobs(alias pred=unaryFun!(q{a.isFile}))(string globs, string root = std.path.curdir) {
+string[] resolveGlobs(alias pred=unaryFun!(q{a.isFile}))(string globs, string root = ".") {
   auto dc = DirChanger(root);
 
   string[] result;
@@ -35,7 +35,7 @@ string[] resolveGlobs(alias pred=unaryFun!(q{a.isFile}))(string globs, string ro
     if (auto re = globsToRe(glob)) {
       found = true; // not enforced to match for now
       auto matcher = regex(re);
-      foreach(DirEntry de; dirEntries(std.path.curdir, SpanMode.depth)) {
+      foreach(DirEntry de; dirEntries(".", SpanMode.depth)) {
         if (pred(de) && !match(de.name, matcher).empty) {
           result ~= de.name;
         }
@@ -60,7 +60,7 @@ struct DirChanger {
   ~this() { std.file.chdir(this.olddir); }
 }
 
-string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
+string[] copyRel(string tgtdir, string globs, string root = ".") {
   tgtdir = absolutePath(tgtdir);
   if (!exists(tgtdir))
     mkdirRecurse(tgtdir);
@@ -93,7 +93,7 @@ string[] copyRel(string tgtdir, string globs, string root = std.path.curdir) {
     std.file.copy(file, tgtfile);
   }
   string prefixDir(string path) {
-    return buildPath(root, chompPrefix(path, std.path.curdir ~ std.path.sep));
+    return buildPath(root, chompPrefix(path, "." ~ std.path.dirSeparator));
   }
   return apply!prefixDir(files);
 }
@@ -152,14 +152,12 @@ string dmdIniFilePath() {
 private:
 
 string globsToRe(string dpkmatcher) {
-  enum string seps = std.path.sep ~ std.path.altsep;
-
   bool hasglobs;
   string translateGlobs(Captures!(string, size_t) m) {
     hasglobs = true;
     return enforce(
       m.hit == "**" ? ".+"
-      : m.hit == "*" ? "[^" ~ seps ~ "]+"
+      : m.hit == "*" ? "[^" ~ dirSeparator ~ "]+"
       : null
     );
   }

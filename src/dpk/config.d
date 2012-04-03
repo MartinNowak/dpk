@@ -60,10 +60,10 @@ struct Section {
 
   //! TODO: separate defaults from configparser
   string defaults(string key) const {
-    enum bindefs = ["install" : "true", "docs" : "false", "imports" : "false", "root" : std.path.curdir];
-    enum libdefs = ["install" : "true", "docs" : "true", "imports" : "true", "root" : std.path.curdir, "shared" : "false"];
-    enum hdrdefs = ["install" : "false", "docs" : "true", "imports" : "true", "root" : std.path.curdir];
-    enum anydefs = ["install" : "false", "docs" : "false", "imports" : "false", "root" : std.path.curdir];
+    enum bindefs = ["install" : "true", "docs" : "false", "imports" : "false", "root" : "."];
+    enum libdefs = ["install" : "true", "docs" : "true", "imports" : "true", "root" : ".", "shared" : "false"];
+    enum hdrdefs = ["install" : "false", "docs" : "true", "imports" : "true", "root" : "."];
+    enum anydefs = ["install" : "false", "docs" : "false", "imports" : "false", "root" : "."];
 
     // workaround @@@ BUG 5675 @@@
     switch (this.type) {
