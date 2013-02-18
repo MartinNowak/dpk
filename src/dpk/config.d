@@ -1,39 +1,69 @@
 module dpk.config;
 
-import std.algorithm, std.array, std.conv, std.exception, std.metastrings,
-  std.regex, std.stream, std.string;
+import std.algorithm, std.array, std.conv, std.exception, std.range, std.regex, std.stream, std.string;
 import dpk.util : fmtString;
 
-struct Config {
-  Section[] sections;
+struct Config
+{
+    Section[] sections;
 
-  @property string toString() const {
-    return to!string(this.sections);
-  }
+    @property string toString() const
+    {
+        return to!string(sections);
+    }
 
-  Section get(string type, lazy Section def=Section()) {
-    auto sect = findSect(type);
-    return sect.empty ? def : sect.front;
-  }
+    Section get(string type, lazy Section def=Section())
+    {
+        auto sect = findSect(type);
+        return sect.empty ? def : sect.front;
+    }
 
-  Section get(string type, lazy Exception exc) {
-    auto sect = findSect(type);
-    enforce(!sect.empty, exc);
-    return sect.front;
-  }
+    Section get(string type, lazy Exception exc)
+    {
+        auto sect = findSect(type);
+        enforce(!sect.empty, exc);
+        return sect.front;
+    }
 
-  bool has(string type) const {
-    return !(cast(Config)this).findSect(type).empty;
-  }
+    bool has(string type) const
+    {
+        return !(cast(Config)this).findSect(type).empty;
+    }
 
-  auto sectsByType(string type)() {
-    return std.algorithm.filter!(Format!("a.type == \"%s\"", type))(this.sections);
-  }
+    Filter sectsByType(string type)
+    {
+        return Filter(sections, type);
+    }
 
 private:
-  Section[] findSect(string type) {
-    return std.algorithm.find!("a.type == b")(this.sections.save, type);
-  }
+    static struct Filter
+    {
+        this(Section[] sections, string type)
+        {
+            _type = type;
+            _sections = sections;
+            seekFront();
+            seekBack();
+        }
+
+        @property bool empty() const { return _sections.empty; }
+        @property inout(Section) front() inout { return _sections.front; }
+        @property inout(Section) back() inout { return _sections.back; }
+        @property void popFront() { _sections.popFront; seekFront(); }
+        @property void popBack() { _sections.popBack; seekBack(); }
+
+    private:
+        void seekFront() { _sections = find!q{a.type == b}(_sections, _type); }
+        void seekBack() { _sections = retro(find!q{a.type == b}(retro(_sections), _type)); }
+
+        string _type;
+        Section[] _sections;
+    }
+
+    Section[] findSect(string type)
+    {
+        return find!q{a.type == b}(sections, type);
+    }
 }
 
 struct Section {
